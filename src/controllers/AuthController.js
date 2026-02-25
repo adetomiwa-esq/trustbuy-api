@@ -32,6 +32,7 @@ export const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      role: "user",
     });
 
     const token = generateToken(user._id);
