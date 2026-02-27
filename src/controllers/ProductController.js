@@ -65,14 +65,66 @@ export const createProduct = async (req, res) => {
 //  * @access Public
 //  */
 
-export const getProducts = async (req, res, next) => {
+export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find({ isActive: true });
-    res.status(200).json(products);
-  } catch (error) {
-    res.status(500).json({
-      message: "Failed to fetch products",
+    // 1️⃣ Extract query params
+    const {
+      page = 1,
+      limit = 12,
+      keyword,
+      minPrice,
+      maxPrice,
+      sort,
+    } = req.query;
+
+    // 2️⃣ Convert to numbers
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+
+    // 3️⃣ Build filter object
+    const filter = {};
+
+    // 🔍 Search by name
+    if (keyword) {
+      filter.name = { $regex: keyword, $options: "i" }; // case-insensitive
+    }
+
+    // 💰 Price filtering
+    if (minPrice || maxPrice) {
+      filter.price = {};
+
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    // 4️⃣ Build sort object
+    let sortOption = {};
+
+    if (sort === "price_asc") sortOption.price = 1;
+    if (sort === "price_desc") sortOption.price = -1;
+    if (sort === "newest") sortOption.createdAt = -1;
+    if (sort === "oldest") sortOption.createdAt = 1;
+
+    // 5️⃣ Count total products
+    const totalProducts = await Product.countDocuments(filter);
+
+    // 6️⃣ Fetch paginated products
+    const products = await Product.find(filter)
+      .sort(sortOption)
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber);
+
+    // 7️⃣ Send structured response
+    res.json({
+      products,
+      currentPage: pageNumber,
+      totalPages: Math.ceil(totalProducts / limitNumber),
+      totalProducts,
+      hasNextPage: pageNumber * limitNumber < totalProducts,
+      hasPrevPage: pageNumber > 1,
     });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch products" });
   }
 };
 
