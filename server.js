@@ -5,12 +5,19 @@ import authRoutes from "./src/routes/AuthRoute.js";
 import connectDB from "./src/config/db.js";
 import cookieParser from "cookie-parser";
 import { csrfProtection } from "./src/middleware/csrfMiddleware.js";
+import cors from "cors";
 
 configDotenv();
 connectDB();
 
 const app = express();
 
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
