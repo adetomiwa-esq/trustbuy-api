@@ -1,7 +1,7 @@
 import { configDotenv } from "dotenv";
 import express from "express";
 import productRoutes from "./src/routes/ProductRoute.js";
-import authRoutes from "./src/routes/AuthRoute.js";
+import authRoutes from "./src/features/auth/auth.routes.js";
 import connectDB from "./src/config/db.js";
 import cookieParser from "cookie-parser";
 import { csrfProtection } from "./src/middleware/csrfMiddleware.js";
