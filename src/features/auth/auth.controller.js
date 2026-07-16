@@ -3,10 +3,6 @@ import jwt from "jsonwebtoken";
 import User from "../../models/user.model.js";
 import generateToken from "../../utils/generateToken.js";
 
-const User = require("../../models/user.model.js");
-
-const generateToken = require("../../utils/generateToken.js");
-
 export const register = async (req, res, next) => {
   try {
     const {
