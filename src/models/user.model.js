@@ -5,26 +5,44 @@ const addressSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
+      required: true,
       trim: true,
     },
 
     phone: {
       type: String,
+      required: true,
       trim: true,
+    },
+
+    country: {
+      type: String,
+      required: true,
+      trim: true,
+      default: "Nigeria",
     },
 
     state: {
       type: String,
+      required: true,
       trim: true,
     },
 
     city: {
       type: String,
+      required: true,
       trim: true,
     },
 
-    address: {
+    street: {
       type: String,
+      required: true,
+      trim: true,
+    },
+
+    postalCode: {
+      type: String,
+      default: "",
       trim: true,
     },
 
@@ -34,7 +52,7 @@ const addressSchema = new mongoose.Schema(
     },
   },
   {
-    _id: false,
+    _id: true,
   },
 );
 
@@ -69,6 +87,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      minlength: 8,
       select: false,
     },
 
@@ -84,6 +103,30 @@ const userSchema = new mongoose.Schema(
     },
 
     addresses: [addressSchema],
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    lastLogin: {
+      type: Date,
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    refreshToken: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
