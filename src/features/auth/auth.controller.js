@@ -2,51 +2,19 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../../models/user.model.js";
 import generateToken from "../../utils/generateToken.js";
+import { registerService, loginService } from "./auth.service.js";
+import cookieOptions from "../../config/cookie.config.js";
 
 export const register = async (req, res, next) => {
   try {
-    const {
-      firstName,
+    const result = await registerService(req.body, req);
 
-      lastName,
-
-      email,
-
-      phone,
-
-      password,
-    } = req.body;
-
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-
-        message: "Email already exists",
-      });
-    }
-
-    const user = await User.create({
-      firstName,
-
-      lastName,
-
-      email,
-
-      phone,
-
-      password,
-    });
-
-    const token = generateToken(user._id);
+    res.cookie("refreshToken", result.refreshToken, cookieOptions);
 
     res.status(201).json({
-      success: true,
-
-      token,
-
-      user,
+      succes: true,
+      user: result.user,
+      accessToken: result.accessToken,
     });
   } catch (error) {
     next(error);
@@ -55,47 +23,19 @@ export const register = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-    const {
-      email,
+    const { email, password } = req.body;
 
-      password,
-    } = req.body;
+    const result = await loginService(email, password, req);
 
-    const user = await User.findOne({
-      email,
-    }).select("+password");
+    res.cookie("refreshToken", result.refreshToken, cookieOptions);
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-
-        message: "Invalid credentials",
-      });
-    }
-
-    const isMatch = await user.comparePassword(password);
-
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-
-        message: "Invalid credentials",
-      });
-    }
-
-    const token = generateToken(user._id);
-
-    user.password = undefined;
-
-    res.json({
+    return res.json({
       success: true,
-
-      token,
-
-      user,
+      user: result.user,
+      accessToken: result.accessToken,
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 

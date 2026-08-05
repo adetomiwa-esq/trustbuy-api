@@ -52,7 +52,7 @@ export const registerService = async (data, req) => {
   };
 };
 
-export const login = async (email, password, req) => {
+export const loginService = async (email, password, req) => {
   const user = await User.findOne({ email }).select("+password");
 
   if (!user) {
