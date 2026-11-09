@@ -1,21 +1,26 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import User from "../../models/user.model.js";
-import generateToken from "../../utils/generateToken.js";
-import { registerService, loginService } from "./auth.service.js";
 import cookieOptions from "../../config/cookie.config.js";
+import User from "../../models/user.model.js";
+import {
+  loginService,
+  refreshSession,
+  registerService,
+  revokeSession,
+} from "./auth.service.js";
 
-export const register = async (req, res, next) => {
-  try {
-    const result = await registerService(req.body, req);
-
-    res.cookie("refreshToken", result.refreshToken, cookieOptions);
-
-    res.status(201).json({
-      succes: true,
+const sendAuth = (res, result, status = 200) => {
+  res.cookie("refreshToken", result.refreshToken, cookieOptions);
+  res
+    .status(status)
+    .json({
+      success: true,
       user: result.user,
       accessToken: result.accessToken,
     });
+};
+
+export const register = async (req, res, next) => {
+  try {
+    sendAuth(res, await registerService(req.body, req), 201);
   } catch (error) {
     next(error);
   }
@@ -23,122 +28,44 @@ export const register = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-
-    const result = await loginService(email, password, req);
-
-    res.cookie("refreshToken", result.refreshToken, cookieOptions);
-
-    return res.json({
-      success: true,
-      user: result.user,
-      accessToken: result.accessToken,
-    });
-  } catch (err) {
-    next(err);
+    sendAuth(res, await loginService(req.body.email, req.body.password, req));
+  } catch (error) {
+    next(error);
   }
 };
 
-/**
- * Helper: generate JWT
- */
-// const generateToken = (userId) => {
-//   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-//     expiresIn: "7d",
-//   });
-// };
+export const refresh = async (req, res, next) => {
+  try {
+    sendAuth(res, await refreshSession(req.cookies?.refreshToken, req));
+  } catch (error) {
+    next(error);
+  }
+};
 
-/**
- * @desc Register user
- * @route POST /api/auth/register
- */
-// export const register = async (req, res) => {
-//   try {
-//     const { name, email, password } = req.body;
+export const logout = async (req, res, next) => {
+  try {
+    await revokeSession(req.cookies?.refreshToken);
+    res
+      .clearCookie("refreshToken", { ...cookieOptions, maxAge: undefined })
+      .json({ success: true, message: "Logged out successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
 
-//     // check if user exists
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) {
-//       return res.status(400).json({ message: "Email already in use" });
-//     }
-
-//     // hash password
-//     const hashedPassword = await bcrypt.hash(password, 12);
-
-//     const user = await User.create({
-//       name,
-//       email,
-//       password: hashedPassword,
-//       role: "user",
-//     });
-
-//     const token = generateToken(user._id);
-
-//     res
-//       .cookie("token", token, {
-//         httpOnly: true,
-//         secure: process.env.NODE_ENV === "production",
-//         sameSite: "strict",
-//         maxAge: 7 * 24 * 60 * 60 * 1000,
-//       })
-//       .status(201)
-//       .json({
-//         message: "Registration successful",
-//         user: {
-//           id: user._id,
-//           name: user.name,
-//           email: user.email,
-//         },
-//       });
-//   } catch (error) {
-//     res.status(500).json({ message: "Registration failed" });
-//   }
-// };
-
-/**
- * @desc Login user
- * @route POST /api/auth/login
- */
-// export const login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const user = await User.findOne({ email }).select("+password");
-//     if (!user) {
-//       return res.status(401).json({ message: "Invalid credentials" });
-//     }
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) {
-//       return res.status(401).json({ message: "Invalid credentials" });
-//     }
-
-//     const token = generateToken(user._id);
-
-//     res
-//       .cookie("token", token, {
-//         httpOnly: true,
-//         secure: process.env.NODE_ENV === "production",
-//         sameSite: "strict",
-//         maxAge: 7 * 24 * 60 * 60 * 1000,
-//       })
-//       .json({
-//         message: "Login successful",
-//         user: {
-//           id: user._id,
-//           name: user.name,
-//           email: user.email,
-//         },
-//       });
-//   } catch {
-//     res.status(500).json({ message: "Login failed" });
-//   }
-// };
-
-/**
- * @desc Logout
- * @route POST /api/auth/logout
- */
-// export const logout = (req, res) => {
-//   res.clearCookie("token").json({ message: "Logged out successfully" });
-// };
+export const me = async (req, res) => {
+  const user = req.user;
+  res.json({
+    success: true,
+    user: {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      avatar: user.avatar,
+      addresses: user.addresses,
+    },
+  });
+};
