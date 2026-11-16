@@ -93,11 +93,9 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
 
-    gallery: [
-      {
-        type: String,
-      },
-    ],
+    gallery: [{ type: String }],
+
+    imageAssets: [{ publicId: String, url: String }],
 
     variants: [variantSchema],
 
@@ -136,6 +134,8 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+productSchema.index({ name: "text", description: "text", tags: "text" });
 
 const Product = mongoose.model("Product", productSchema);
 
