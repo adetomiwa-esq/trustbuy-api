@@ -1,25 +1,30 @@
 import express from "express";
 import {
   createProduct,
+  deleteProduct,
   getProductBySlug,
   getProducts,
+  updateProduct,
 } from "../controllers/ProductController.js";
-import { adminOnly, protect } from "../middleware/authMiddleware.js";
+import { protect, allowRoles } from "../middleware/protect.js";
 import upload from "../middleware/uploadMiddleware.js";
-import { csrfProtection } from "../middleware/csrfMiddleware.js";
 
 const router = express.Router();
-
-router.route("/products").get(getProducts);
-router.route("/products/:slug").get(getProductBySlug);
-router
-  .route("/new-product")
-  .post(
-    protect,
-    adminOnly,
-    csrfProtection,
-    upload.array("images", 5),
-    createProduct,
-  );
-
+router.get("/", getProducts);
+router.get("/:slug", getProductBySlug);
+router.post(
+  "/",
+  protect,
+  allowRoles("SUPER_ADMIN"),
+  upload.array("images", 8),
+  createProduct,
+);
+router.patch(
+  "/:slug",
+  protect,
+  allowRoles("SUPER_ADMIN"),
+  upload.array("images", 8),
+  updateProduct,
+);
+router.delete("/:slug", protect, allowRoles("SUPER_ADMIN"), deleteProduct);
 export default router;
